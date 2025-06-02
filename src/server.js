@@ -20,12 +20,15 @@ redisClient.connect()
 
 app.locals.redis = redisClient; // Make Redis client available in app locals
 
-app.use('/api/v1', jsonRoutes);
-
+//const PORT =  3001;
 const PORT = process.env.PORT || 3000; // Set the port from environment variable or default to 3000
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
+
+
+
+
 
 
  
