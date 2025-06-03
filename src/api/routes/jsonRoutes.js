@@ -6,7 +6,6 @@ const {
     getPlan,
     deletePlan
 } = require('../controllers/jsonController');
-const { reportTypeError } = require('ajv/dist/compile/validate/dataType');
 
 router.post('/', createPlan);
 router.get('/:objectId', getPlan);

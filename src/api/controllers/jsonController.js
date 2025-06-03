@@ -40,6 +40,15 @@ const getPlan = async (req, res) => {
             if (!data) {
                 return res.status(404).json({ message: 'Plan not found' });
             }
+            
+            const jsonData = JSON.stringify(data);
+            const hash = crypto.createHash('md5').update(jsonData).digest('base64');
+            const eTag = `"${hash}"`;
+            const ifNoneMatch = req.headers['if-none-match'];
+            if(ifNoneMatch === eTag) {
+                return res.status(304).end(); // Not Modified
+            }
+            res.setHeader('ETag', eTag);
             res.status(200).json(data);
         } catch (error) {
             console.error('Error retrieving data from Redis:', error);
