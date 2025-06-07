@@ -66,7 +66,7 @@ const deletePlan = async (req, res) => {
         if (result === 0) {  
             return res.status(404).json({ message: 'Plan not found' });
         }
-        res.status(200).json({ message: 'Plan deleted successfully', objectId });
+        res.status(204).json({ message: 'Plan deleted successfully', objectId });
     } catch (error) {
         console.error('Error deleting data from Redis:', error);
         res.status(500).json({ message: 'Internal server error' });
