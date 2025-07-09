@@ -73,8 +73,53 @@ const deletePlan = async (req, res) => {
     }
 };
 
+// Patch
+const patchPlan = async (req, res) => {
+    const objectId = req.params.objectId;
+    const patchData = req.body;
+
+    try {
+        const existingData = await getData(objectId);
+        if (!existingData) {
+            return res.status(404).json({ message: 'Plan not found' });
+        }
+
+        // If-Match Etag validation
+        const clientETag = req.headers['if-match'];
+        const serverETag =  `"${crypto.createHash('md5').update(JSON.stringify(existingData)).digest('base64')}"`;
+
+        if (clientETag && clientETag !== serverETag) {
+            return res.status(412).json({ message: 'Precondition failed: ETag mismatch' });
+        }
+
+        // Merge existing data with patch data
+        const updatedData = { ...existingData, ...patchData };
+        
+        // Validate the updated data
+        const { valid, errors } = validateSchema(planSchema, updatedData);
+        if (!valid) {
+            return res.status(400).json({ message: 'Invalid data', errors: errors });
+        }
+
+        await setData(objectId, updatedData);
+
+        //ETag Creation
+        const hash = crypto.createHash('md5').update(JSON.stringify(updatedData)).digest('base64');
+        const eTag = `"${hash}"`;
+        res.setHeader('ETag', eTag);
+        
+        res.status(200).json({ message: 'Plan updated successfully', objectId });
+    } catch (error) {
+        console.error('Error updating data in Redis:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
+};
+
+
 module.exports = {
     createPlan,
     getPlan,
-    deletePlan
+    deletePlan,
+    patchPlan
 };
