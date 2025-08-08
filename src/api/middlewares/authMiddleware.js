@@ -22,6 +22,7 @@ const verifyGoogleToken = async (req, res, next) => {
     }
     catch (error) {
         console.error('Error verifying Google token:', error);
+        console.error(error);
         return res.status(401).json({ error: true, message: 'Invalid token' });
     }
 

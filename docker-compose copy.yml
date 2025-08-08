@@ -1,0 +1,96 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - webapp
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - webapp
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 15s
+      timeout: 30s
+      retries: 3
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    hostname: elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - node.name=elastic-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 30s
+      retries: 3
+    networks:
+      - webapp
+
+  kibana:
+    image: kibana:8.13.0
+    hostname: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - webapp
+
+  webapp:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - GOOGLE_CLIENT_ID=437408544060-g25n5rgo6faijlfu4urjekhv1n51indh.apps.googleusercontent.com
+    depends_on:
+      - redis
+      - rabbitmq
+      - elasticsearch
+    networks:
+      - webapp
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: node consumer/index.js
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - webapp
+
+volumes:
+  esdata:
+
+networks:
+  webapp:
