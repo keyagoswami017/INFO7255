@@ -238,6 +238,34 @@ const deletePlan = async (req, res) => {
         }
 
     // 2b. Delete related Elasticsearch documents using query
+       /* await elasticClient.deleteByQuery({
+            index: PLAN_INDEX,
+            body: {
+                query: {
+                bool: {
+                    should: [
+                    // Root plan itself
+                    { ids: { values: [objectId] } },
+
+                    // Direct children of plan (routed to planId)
+                    { term: { parentId: objectId } },
+
+                    // Grandchildren (routed to linkedPlanServices IDs) whose parent belongs to this plan
+                    {
+                        has_parent: {
+                        parent_type: 'linkedPlanServices',
+                        query: { term: { parentId: objectId } }
+                        }
+                    }
+                    ],
+                    minimum_should_match: 1
+                }
+                }
+            },
+            refresh: true,
+            conflicts: 'proceed'
+            });*/
+
     const deleteQuery = {
       index: PLAN_INDEX,
       body: {
@@ -261,13 +289,15 @@ const deletePlan = async (req, res) => {
       event: 'PLAN_DELETED',
       objectId
     });
-
+    await deleteData(`eTag : plan :${objectId}`);
     res.status(204).json({ message: 'Plan and related data deleted successfully', objectId });
   } catch (error) {
     console.error('Error deleting data from Redis or Elasticsearch:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
 // PATCH /plans/:objectId
 const patchPlan = async (req, res) => {
     const objectId = req.params.objectId;
@@ -327,6 +357,7 @@ const patchPlan = async (req, res) => {
                 });
             }
         }
+
 
         // Index all documents in Elasticsearch
         await indexAll(updatedData);
