@@ -6,12 +6,14 @@ const {
     createPlan,
     getPlan,
     deletePlan,
-    patchPlan
+    patchPlan,
+    searchElastic
 } = require('../controllers/jsonController');
 
 router.post('/',verifyGoogleToken, createPlan);
 router.get('/:objectId', verifyGoogleToken, getPlan);
 router.delete('/:objectId',verifyGoogleToken, deletePlan);
 router.patch('/:objectId', verifyGoogleToken, patchPlan);
+router.post('/elastic/search', verifyGoogleToken,searchElastic);
 
 module.exports = router;
